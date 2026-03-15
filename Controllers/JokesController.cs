@@ -170,5 +170,17 @@ namespace JokesWebApp.Controllers
         {
             return _context.Joke.Any(e => e.Id == id);
         }
+        // GET: Jokes/Random
+        public async Task<IActionResult> Random()
+        {
+            var allIds = await _context.Joke.Select(j => j.Id).ToListAsync();
+            if (allIds.Count == 0) return RedirectToAction(nameof(Index));
+
+            Random rand = new Random();
+            int randomIndex = rand.Next(0, allIds.Count);
+            int randomId = allIds[randomIndex];
+
+            return RedirectToAction(nameof(Details), new { id = randomId });
+        }
     }
 }
