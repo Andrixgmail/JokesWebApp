@@ -1,51 +1,88 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - JokesWebApp</title>
+    <meta name="description" content="Andrea's Jokes & Riddles: read, solve and share jokes and riddles." />
+    <title>@ViewData["Title"] - Andrea's Jokes &amp; Riddles</title>
+    <script>
+        // Apply the saved theme before the page paints (avoids a flash).
+        (function () {
+            try {
+                var t = localStorage.getItem('jw-theme');
+                if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) { }
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/JokesWebApp.styles.css" asp-append-version="true" />
 </head>
 <body>
+    @* Slowly drifting colour blobs behind every page *@
+    <div class="bg-blobs" aria-hidden="true">
+        <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
+    </div>
+    <canvas id="fx-canvas" aria-hidden="true"></canvas>
+
+    @* Token used by the JavaScript "That's funny!" button *@
+    <form id="af-token" class="d-none">@Html.AntiForgeryToken()</form>
+
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">JokesWebApp</a>
+        <nav class="navbar navbar-expand-xl navbar-light jw-nav sticky-top">
+            <div class="container">
+                <a class="navbar-brand jw-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <span class="brand-emoji">😜</span> Andrea's <span class="text-grad">Jokes &amp; Riddles</span>
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>          
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Jokes" asp-action="Index">Jokes</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Jokes" asp-action="ShowSearchForm">Search</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+                <div class="navbar-collapse collapse justify-content-between">
+                    <ul class="navbar-nav flex-grow-1 ms-xl-3">
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Jokes" asp-action="Index" asp-route-category="Joke">😂 Jokes</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Jokes" asp-action="Index" asp-route-category="Riddle">🧩 Riddles</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Jokes" asp-action="Index" asp-route-sort="popular">🔥 Top</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Jokes" asp-action="Random">🎲 Surprise me</a></li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item"><a class="nav-link" asp-area="" asp-controller="Jokes" asp-action="Mine">My jokes</a></li>
+                        }
                     </ul>
+                    <form class="d-flex d-xl-none d-xxl-flex nav-search my-2 my-xl-0 me-xl-2" asp-area="" asp-controller="Jokes" asp-action="Index" method="get" role="search">
+                        <input class="form-control form-control-sm" type="search" name="q" placeholder="Search…" aria-label="Search jokes and riddles" />
+                    </form>
+                    <a class="btn btn-jw btn-sm me-xl-2 my-1" asp-area="" asp-controller="Jokes" asp-action="Create">＋ Add yours</a>
+                    <button id="theme-toggle" class="btn btn-icon me-xl-2" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
                     <partial name="_LoginPartial" />
                 </div>
             </div>
         </nav>
     </header>
+
     <div class="container">
-        <main role="main" class="pb-3">
+        <main role="main" class="pb-5 pt-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2024 - JokesWebApp - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    @if (TempData["Toast"] is string toast)
+    {
+        <div class="jw-toast" role="status" data-toast>@toast</div>
+    }
+
+    <footer class="jw-footer">
+        <div class="container d-flex flex-wrap justify-content-between gap-2">
+            <span>&copy; @DateTime.Now.Year · Andrea's Jokes &amp; Riddles · Developed by <a href="https://www.andreaswebstudio.co.za" target="_blank" rel="noopener">www.andreaswebstudio.co.za</a></span>
+            <span>
+                <a asp-area="" asp-controller="Jokes" asp-action="Random" asp-route-category="Riddle">Random riddle</a> ·
+                <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy &amp; house rules</a>
+            </span>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

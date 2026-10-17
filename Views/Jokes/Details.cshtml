@@ -1,61 +1,84 @@
-﻿@model JokesWebApp.Models.Joke
-
+@model JokesWebApp.Models.ViewModels.JokeDetailsViewModel
 @{
-    ViewData["Title"] = "Details";
+    var j = Model.Joke;
+    var isRiddle = j.Category == JokeCategory.Riddle;
+    ViewData["Title"] = isRiddle ? "Riddle" : "Joke";
 }
 
-<h1>Details</h1>
+<div class="narrow">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a class="link-arrow" asp-action="Index" asp-route-category="@j.Category">← All @(isRiddle ? "riddles" : "jokes")</a>
+        <span class="text-soft small kbd-hint">Shortcuts: <kbd>Space</kbd> reveal · <kbd>←</kbd><kbd>→</kbd> browse · <kbd>R</kbd> random</span>
+    </div>
 
-<div>
-    <h4>Joke</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.JokeQuestion)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.JokeQuestion)
-            <button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#answer">
-                Show Answer
-            </button>
-            <div class="collapse mt-2" id="answer">
-                <div class="card card-body">
-                    @Html.DisplayFor(model => model.JokeAnswer)
+    <article class="stage @(isRiddle ? "is-riddle" : "is-joke")" id="stage" data-joke-id="@j.Id">
+        <span class="jw-badge">@j.Emoji @(isRiddle ? "Riddle" : "Joke") #@j.Id</span>
+        <h1 class="stage-q">@j.JokeQuestion</h1>
+
+        @if (isRiddle)
+        {
+            <form class="guess" id="guess-form" data-answer="@j.JokeAnswer" autocomplete="off">
+                <label for="guess-input" class="form-label">Think you know? Have a guess:</label>
+                <div class="input-group">
+                    <input id="guess-input" class="form-control" placeholder="Type your answer…" />
+                    <button class="btn btn-jw-alt" type="submit">Check</button>
                 </div>
-            </div>
-        </dd>
-        <dt class = "col-sm-2">
-            @* @Html.DisplayNameFor(model => model.JokeAnswer) *@
-        </dt>
-        <dd class = "col-sm-10">
-            @* @Html.DisplayFor(model => model.JokeAnswer) *@
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+                <div class="guess-feedback" aria-live="polite"></div>
+            </form>
+        }
 
-<div class="mt-4">
-    <button onclick="sendLaugh()" class="btn btn-outline-warning btn-lg">😂 That's Funny!</button>
-</div>
+        <div class="stage-answer" id="stage-answer" hidden>
+            <span class="answer-label">@(isRiddle ? "Answer" : "Punchline")</span>
+            <p>@j.JokeAnswer</p>
+        </div>
 
-<div id="emoji-container" style="position: relative;"></div>
+        <div class="d-flex flex-wrap gap-2 justify-content-center mt-4">
+            <button type="button" class="btn btn-jw btn-lg" id="reveal-btn">@(isRiddle ? "🤔 Show the answer" : "🥁 Hit me with the punchline")</button>
+            <button type="button" class="btn btn-laugh btn-lg" data-laugh="@j.Id">😂 That's funny! <span class="count" data-laugh-count="@j.Id">@j.Likes</span></button>
+            <button type="button" class="btn btn-ghost btn-lg" id="share-btn" data-share-text="@j.JokeQuestion">🔗 Share</button>
+        </div>
 
-<script>
-    function sendLaugh() {
-        const container = document.getElementById('emoji-container');
-        const emoji = document.createElement('div');
-        emoji.innerText = "😂";
-        emoji.className = 'floating-emoji';
-    
-        // Randomize horizontal position slightly
-        emoji.style.left = Math.random() * 50 + 'px';
-    
-        container.appendChild(emoji);
-    
-        // Clean up memory
-        setTimeout(() => { emoji.remove(); }, 2000);
+        <div class="stage-meta">
+            <span>by <strong>@j.DisplayAuthor</strong></span>
+            <span>· added @j.CreatedAt.ToLocalTime().ToString("d MMM yyyy")</span>
+            <span>· 👀 @j.Views reads</span>
+        </div>
+    </article>
+
+    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+        <div>
+            @if (Model.PreviousId.HasValue)
+            {
+                <a class="btn btn-ghost" id="prev-link" asp-action="Details" asp-route-id="@Model.PreviousId">← Previous</a>
+            }
+        </div>
+        <a class="btn btn-jw-alt" id="random-link" asp-action="Random" asp-route-category="@j.Category">🎲 Another @(isRiddle ? "riddle" : "joke")</a>
+        <div>
+            @if (Model.NextId.HasValue)
+            {
+                <a class="btn btn-ghost" id="next-link" asp-action="Details" asp-route-id="@Model.NextId">Next →</a>
+            }
+        </div>
+    </div>
+
+    @if (Model.CanManage)
+    {
+        <div class="text-center mt-3">
+            <a class="btn btn-sm btn-ghost" asp-action="Edit" asp-route-id="@j.Id">✏️ Edit</a>
+            <a class="btn btn-sm btn-ghost" asp-action="Delete" asp-route-id="@j.Id">🗑️ Delete</a>
+        </div>
     }
-</script>
+</div>
+
+@if (Model.MoreLikeThis.Any())
+{
+    <section class="mt-5">
+        <h2 class="section-title">More @(isRiddle ? "riddles" : "jokes") you might like</h2>
+        <div class="row g-3">
+            @foreach (var other in Model.MoreLikeThis)
+            {
+                <div class="col-md-4"><partial name="_JokeCard" model="other" /></div>
+            }
+        </div>
+    </section>
+}

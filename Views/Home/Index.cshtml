@@ -1,11 +1,127 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model JokesWebApp.Models.ViewModels.HomeViewModel
+@{
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome To Andrea's Jokes App'</h1>
-    <p>The foremost authority for Andrea's good humor that you will find anywhere on your local host.</a>.</p>
-    <h2 class="display-3">PLEASE CLICK REGISTER TO START USING THE WEBSITE</h2>
-</div>
+<section class="hero">
+    <canvas id="hero-particles" aria-hidden="true"></canvas>
+    <div class="hero-inner text-center">
+        <p class="eyebrow">Welcome to Andrea's</p>
+        <h1 class="hero-title">
+            A daily dose of
+            <span class="rotator text-grad" data-words="jokes|riddles|puns|brain-teasers|giggles">jokes</span>
+        </h1>
+        <p class="hero-sub">
+            Read a joke, crack a riddle, and share your own. Hit <strong>😂</strong> when something makes you laugh,
+            and the funniest ones float to the top.
+        </p>
+        <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+            <a class="btn btn-jw btn-lg" asp-controller="Jokes" asp-action="Random" asp-route-category="Joke">🎲 Random joke</a>
+            <a class="btn btn-jw-alt btn-lg" asp-controller="Jokes" asp-action="Random" asp-route-category="Riddle">🧩 Random riddle</a>
+            <a class="btn btn-ghost btn-lg" asp-controller="Jokes" asp-action="Create">＋ Share yours</a>
+        </div>
+    </div>
+</section>
 
-<a asp-controller="Jokes" asp-action="Random" class="btn btn-warning">🔀 Random Joke</a>
+@* ---------------- Live counters ---------------- *@
+<section class="stats-row" data-stats-url="@Url.Action("Stats", "Home")">
+    <div class="stat"><div class="stat-num" data-stat="jokes" data-value="@Model.Stats.Jokes">0</div><div class="stat-label">😂 jokes</div></div>
+    <div class="stat"><div class="stat-num" data-stat="riddles" data-value="@Model.Stats.Riddles">0</div><div class="stat-label">🧩 riddles</div></div>
+    <div class="stat"><div class="stat-num" data-stat="laughs" data-value="@Model.Stats.Laughs">0</div><div class="stat-label">🤣 laughs given</div></div>
+    <div class="stat"><div class="stat-num" data-stat="views" data-value="@Model.Stats.Views">0</div><div class="stat-label">👀 reads</div></div>
+    <div class="live-dot" title="Updates live"><span></span> live</div>
+</section>
+
+@* ---------------- Of the day ---------------- *@
+<section class="mt-5">
+    <h2 class="section-title">Today's picks <small>new ones every day</small></h2>
+    <div class="row g-4">
+        @foreach (var (pick, label) in new[] { (Model.JokeOfTheDay, "Joke of the day"), (Model.RiddleOfTheDay, "Riddle of the day") })
+        {
+            <div class="col-md-6">
+                @if (pick != null)
+                {
+                    var isRiddle = pick.Category == JokeCategory.Riddle;
+                    <div class="flip-card @(isRiddle ? "is-riddle" : "is-joke")" tabindex="0" data-flip data-joke-id="@pick.Id" role="button" aria-label="Flip to see the answer">
+                        <div class="flip-inner">
+                            <div class="flip-face flip-front">
+                                <span class="jw-badge">@pick.Emoji @label</span>
+                                <p class="flip-q">@pick.JokeQuestion</p>
+                                <span class="flip-hint">tap to flip ↻</span>
+                            </div>
+                            <div class="flip-face flip-back">
+                                <span class="jw-badge">@(isRiddle ? "Answer" : "Punchline")</span>
+                                <p class="flip-a">@pick.JokeAnswer</p>
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <button type="button" class="btn btn-sm btn-laugh" data-laugh="@pick.Id">😂 <span data-laugh-count="@pick.Id">@pick.Likes</span></button>
+                                    <a class="btn btn-sm btn-ghost" asp-controller="Jokes" asp-action="Details" asp-route-id="@pick.Id">Open</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+<div class="row g-4 mt-4">
+    <section class="col-lg-8">
+        <h2 class="section-title">Freshly added</h2>
+        <div class="row g-3">
+            @foreach (var j in Model.Latest)
+            {
+                <div class="col-md-6 col-xl-4"><partial name="_JokeCard" model="j" /></div>
+            }
+        </div>
+        <div class="mt-3"><a class="link-arrow" asp-controller="Jokes" asp-action="Index">See everything →</a></div>
+    </section>
+
+    <aside class="col-lg-4">
+        <h2 class="section-title">🔥 Most laughed at</h2>
+        @if (Model.MostLaughed.Any())
+        {
+            <ol class="leader-list">
+                @foreach (var j in Model.MostLaughed)
+                {
+                    <li>
+                        <a class="leader-name" asp-controller="Jokes" asp-action="Details" asp-route-id="@j.Id">@j.JokeQuestion</a>
+                        <span class="pill">😂 @j.Likes</span>
+                    </li>
+                }
+            </ol>
+        }
+        else
+        {
+            <p class="text-soft">No laughs yet. Be the first to press 😂 on a joke!</p>
+        }
+
+        <h2 class="section-title mt-4">🏆 Top jokesters</h2>
+        @if (Model.TopContributors.Any())
+        {
+            <ol class="leader-list">
+                @foreach (var c in Model.TopContributors)
+                {
+                    <li><span class="leader-name">@c.Name</span> <span class="pill">@c.Submissions posted · 😂 @c.Laughs</span></li>
+                }
+            </ol>
+        }
+        else
+        {
+            <p class="text-soft">Nobody's on the board yet. <a asp-controller="Jokes" asp-action="Create">Submit a joke</a> to claim the top spot!</p>
+        }
+
+        <div class="tip-card mt-4">
+            <h3>💡 Got a good one?</h3>
+            <p class="mb-2">Register for free and add your own jokes and riddles. You can edit or delete them whenever you like.</p>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a class="btn btn-jw btn-sm" asp-controller="Jokes" asp-action="Create">＋ Add a joke or riddle</a>
+            }
+            else
+            {
+                <a class="btn btn-jw btn-sm" asp-area="Identity" asp-page="/Account/Register">Register, it's free</a>
+            }
+        </div>
+    </aside>
+</div>

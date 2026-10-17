@@ -1,0 +1,29 @@
+@model JokesWebApp.Models.Joke
+@{
+    var isRiddle = Model.Category == JokeCategory.Riddle;
+    var canManage = ViewData["CanManage"] as bool? ?? false;
+}
+<div class="jw-card tilt @(isRiddle ? "is-riddle" : "is-joke")" data-joke-id="@Model.Id">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="jw-badge">@Model.Emoji @(isRiddle ? "Riddle" : "Joke")</span>
+        <span class="text-soft small" title="Laughs">😂 <span data-laugh-count="@Model.Id">@Model.Likes</span></span>
+    </div>
+    <a class="stretched-q" asp-controller="Jokes" asp-action="Details" asp-route-id="@Model.Id">
+        <h5 class="jw-q">@Model.JokeQuestion</h5>
+    </a>
+    <div class="jw-answer" hidden>
+        <span class="answer-label">@(isRiddle ? "Answer" : "Punchline"):</span> @Model.JokeAnswer
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-center mt-auto pt-3">
+        <button type="button" class="btn btn-sm btn-reveal" data-reveal>
+            @(isRiddle ? "🤔 Reveal answer" : "🥁 Punchline")
+        </button>
+        <button type="button" class="btn btn-sm btn-laugh" data-laugh="@Model.Id" title="That's funny!">😂</button>
+        @if (canManage)
+        {
+            <a class="btn btn-sm btn-ghost" asp-controller="Jokes" asp-action="Edit" asp-route-id="@Model.Id" title="Edit">✏️</a>
+            <a class="btn btn-sm btn-ghost" asp-controller="Jokes" asp-action="Delete" asp-route-id="@Model.Id" title="Delete">🗑️</a>
+        }
+        <span class="ms-auto small text-soft">by @Model.DisplayAuthor</span>
+    </div>
+</div>

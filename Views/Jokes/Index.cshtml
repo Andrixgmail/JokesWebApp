@@ -1,54 +1,81 @@
-﻿@model IEnumerable<JokesWebApp.Models.Joke>
-
+@model JokesWebApp.Models.ViewModels.JokeListViewModel
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = Model.Heading;
+    string action = Model.MineOnly ? "Mine" : "Index";
+    string? cat = Model.Category?.ToString();
 }
 
-<h1>Index</h1>
-
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-
-<div class="row">
-    @foreach (var item in Model)
-    {
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 joke-card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title text-primary">Q: @Html.DisplayFor(modelItem => item.JokeQuestion)</h5>
-                    <p class="card-text text-muted small">Click details to see the punchline!</p>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">View Joke</a>
-                </div>
-            </div>
-        </div>
-    }
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-3">
+    <div>
+        <h1 class="page-title mb-1">@Model.Heading</h1>
+        <p class="text-soft mb-0">@Model.TotalCount @(Model.TotalCount == 1 ? "result" : "results") · tap a card's button to reveal the answer</p>
+    </div>
+    <a class="btn btn-jw" asp-action="Create" asp-route-category="@(Model.Category ?? JokeCategory.Joke)">＋ Add @(Model.Category == JokeCategory.Riddle ? "a riddle" : "a joke")</a>
 </div>
-@* <table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.JokeQuestion)
-            </th>
-            
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.JokeQuestion)
-            </td>
-            
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+
+@if (!Model.MineOnly)
+{
+    <form method="get" asp-action="Index" class="filter-bar">
+        <div class="seg" role="tablist">
+            <a class="seg-btn @(cat == null ? "active" : "")" asp-action="Index" asp-route-q="@Model.Query" asp-route-sort="@Model.Sort">✨ All</a>
+            <a class="seg-btn @(cat == "Joke" ? "active" : "")" asp-action="Index" asp-route-category="Joke" asp-route-q="@Model.Query" asp-route-sort="@Model.Sort">😂 Jokes</a>
+            <a class="seg-btn @(cat == "Riddle" ? "active" : "")" asp-action="Index" asp-route-category="Riddle" asp-route-q="@Model.Query" asp-route-sort="@Model.Sort">🧩 Riddles</a>
+        </div>
+        @if (cat != null)
+        {
+            <input type="hidden" name="category" value="@cat" />
+        }
+        <input class="form-control" type="search" name="q" value="@Model.Query" placeholder="Search questions, answers or authors…" />
+        <select class="form-select" name="sort" onchange="this.form.submit()" aria-label="Sort">
+            <option value="newest" selected="@(Model.Sort == "newest")">Newest first</option>
+            <option value="popular" selected="@(Model.Sort == "popular")">Most laughs</option>
+            <option value="oldest" selected="@(Model.Sort == "oldest")">Oldest first</option>
+            <option value="az" selected="@(Model.Sort == "az")">A → Z</option>
+        </select>
+        <button class="btn btn-jw-alt" type="submit">Search</button>
+    </form>
 }
-    </tbody>
-</table> *@
+
+@if (!Model.Jokes.Any())
+{
+    <div class="empty-state">
+        <div class="empty-emoji">🦗</div>
+        @if (Model.MineOnly)
+        {
+            <p>You haven't shared anything yet.</p>
+            <a class="btn btn-jw" asp-action="Create">Share your first joke</a>
+        }
+        else
+        {
+            <p>Crickets… nothing matches <strong>@Model.Query</strong>.</p>
+            <a class="btn btn-ghost" asp-action="Index">Clear search</a>
+            <a class="btn btn-jw" asp-action="Create">Add one yourself</a>
+        }
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @{ var i = 0; }
+        @foreach (var item in Model.Jokes)
+        {
+            <div class="col-sm-6 col-lg-4 stagger" style="--i:@(i++)">
+                <partial name="_JokeCard" model="item" view-data='new ViewDataDictionary(ViewData) { { "CanManage", Model.CanManage(item) } }' />
+            </div>
+        }
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="mt-4 d-flex justify-content-center" aria-label="Pages">
+            <ul class="pagination jw-pages">
+                @for (var p = 1; p <= Model.TotalPages; p++)
+                {
+                    <li class="page-item @(p == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="@action" asp-route-page="@p" asp-route-q="@Model.Query" asp-route-category="@cat" asp-route-sort="@Model.Sort">@p</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}

@@ -1,0 +1,75 @@
+@model JokesWebApp.Models.Joke
+@{
+    var submitLabel = ViewData["SubmitLabel"] as string ?? "Save";
+}
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="jw-panel">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <fieldset class="mb-3">
+                <legend class="form-label">What are you sharing?</legend>
+                <div class="type-picker">
+                    <label class="type-option">
+                        <input type="radio" asp-for="Category" value="@JokeCategory.Joke" />
+                        <span><b>😂 A joke</b><small>Set-up + punchline</small></span>
+                    </label>
+                    <label class="type-option">
+                        <input type="radio" asp-for="Category" value="@JokeCategory.Riddle" />
+                        <span><b>🧩 A riddle</b><small>Question + answer to guess</small></span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <div class="mb-3">
+                <label asp-for="JokeQuestion" class="form-label"></label>
+                <textarea asp-for="JokeQuestion" class="form-control" rows="3" maxlength="500" data-preview="q"
+                          placeholder="e.g. What goes up and comes down but never moves?"></textarea>
+                <div class="d-flex justify-content-between">
+                    <span asp-validation-for="JokeQuestion" class="text-danger small"></span>
+                    <small class="text-soft" data-counter-for="JokeQuestion">0/500</small>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="JokeAnswer" class="form-label"></label>
+                <textarea asp-for="JokeAnswer" class="form-control" rows="2" maxlength="500" data-preview="a"
+                          placeholder="e.g. A staircase."></textarea>
+                <div class="d-flex justify-content-between">
+                    <span asp-validation-for="JokeAnswer" class="text-danger small"></span>
+                    <small class="text-soft" data-counter-for="JokeAnswer">0/500</small>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-jw">@submitLabel</button>
+                <a class="btn btn-ghost" asp-action="Index">Cancel</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <p class="form-label">Live preview</p>
+        <div class="flip-card preview-card" tabindex="0" data-flip data-no-confetti>
+            <div class="flip-inner">
+                <div class="flip-face flip-front">
+                    <span class="jw-badge" data-preview-badge>😂 Joke</span>
+                    <p class="flip-q" data-preview-out="q">Your question appears here…</p>
+                    <span class="flip-hint">tap to flip ↻</span>
+                </div>
+                <div class="flip-face flip-back">
+                    <span class="jw-badge">Answer</span>
+                    <p class="flip-a" data-preview-out="a">…and the answer here.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="tip-card mt-3">
+            <h3>✍️ Tips for a great one</h3>
+            <ul class="mb-0">
+                <li>Keep the set-up short. The fewer words, the bigger the laugh.</li>
+                <li>Put the twist at the very end of the punchline.</li>
+                <li>Riddles: give enough clues that the answer feels fair.</li>
+                <li>Read it out loud once before posting.</li>
+            </ul>
+        </div>
+    </div>
+</div>

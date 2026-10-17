@@ -30,6 +30,22 @@ namespace JokesWebApp.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AuthorId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AuthorName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
                     b.Property<string>("JokeAnswer")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -38,9 +54,19 @@ namespace JokesWebApp.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Likes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Views")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.ToTable("Joke", (string)null);
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("Category");
+
+                    b.ToTable("Joke");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
